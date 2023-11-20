@@ -27,7 +27,7 @@ This project showcases the capabilities of combining OpenAI's GPT-4 with Streaml
 
 1. **Clone the Repository**:
     ```bash
-    git clone https://github.com/NikhilSehgal123/Azure-OpenAI-SQL.git
+    git clone https://github.com/AnveshMS/PerformanceAnalyzer.git
     ```
 
 2. **Set up a Virtual Environment** (optional but recommended):
