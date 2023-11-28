@@ -9,7 +9,6 @@ import sql_db
 from prompts.prompts import SYSTEM_MESSAGE
 from azure_openai import get_completion_from_messages
 
-
 def query_database(query, conn):
     """
     Run SQL query and return results in a dataframe
@@ -34,7 +33,12 @@ def upload_performance_metrics_data():
     if st.checkbox('Upload Performance Results'):
         # Create an upload file in UI
         uploaded_file = st.file_uploader("Upload Test Results", type="csv")
-        if uploaded_file is not None:
+        # Read the boolean value from the text file
+        with open('myfile.txt', 'r') as f:
+            value = f.read()
+            upload = value == 'True'
+            
+        if uploaded_file is not None and upload:
             upload = uploaded_file
             # Process the uploaded file
             file_contents = uploaded_file.read().decode('utf-8-sig')
@@ -69,6 +73,9 @@ def upload_performance_metrics_data():
                 }
                 sql_db.insert_data(conn,table_name="PerformanceMetrics", data_dict=data_dict)
             st.write("Uploaded file inserted into database successfully.")
+            # Create a text file and write a boolean value to it
+            with open('myfile.txt', 'w') as f:
+                f.write(str(False))  # Convert the boolean to a string before writing
             
 def generate_sql_queries():
     """
@@ -118,7 +125,14 @@ def generate_sql_queries():
 
         except Exception as e:
             st.write(f"An error occurred: {e}")
+        with open('myfile.txt', 'w') as f:
+            f.write(str(True))  # Convert the boolean to a string before writing
         
+def createTextFile():
+    # Create a text file and write a boolean value to it
+    with open('myfile.txt', 'w') as f:
+        f.write(str(True))  # Convert the boolean to a string before writing
+
 if __name__ == "__main__":
     # Create or connect to SQL Server database
     conn = sql_db.create_connection()
@@ -126,6 +140,7 @@ if __name__ == "__main__":
     # Schema Representation for finances table
     schemas = sql_db.get_schema_representation()
     st.title("Performance Analyzer with GPT-4")
+    createTextFile()
     upload_performance_metrics_data()
     generate_sql_queries()
     

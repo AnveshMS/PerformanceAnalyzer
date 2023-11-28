@@ -13,11 +13,15 @@ from tqdm import tqdm
 import numpy as np
 import pandas as pd
 
+import os
+from dotenv import load_dotenv
+load_dotenv()
 
+env = os.environ
 DATABASE_NAME = "expenseManager"
 server = 'expensemgr.database.windows.net'
-username = 'SQLadmin' 
-password = 'password$123'
+username = env.get('SQL_USERNAME') 
+password = env.get('SQL_PASSWORD')
 connection_url = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={DATABASE_NAME};UID={username};PWD={password};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30';
 
 

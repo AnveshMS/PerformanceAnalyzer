@@ -1,13 +1,13 @@
-from dotenv import load_dotenv
-import os
 import openai
-
+import os
+from dotenv import load_dotenv
 load_dotenv()
+env = os.environ
 
 openai.api_type = "azure"
 openai.api_base = "https://openai-poc-anvesh.openai.azure.com/"
 openai.api_version = "2023-07-01-preview"
-openai.api_key = "8c43a93f21d14d63b8ec0b41993c57fc"
+openai.api_key =  "8c43a93f21d14d63b8ec0b41993c57fc"
 
 def get_completion_from_messages(system_message, user_message, model="gpt-4", temperature=0, max_tokens=500) -> str:
     """
