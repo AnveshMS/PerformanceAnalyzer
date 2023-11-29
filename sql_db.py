@@ -14,10 +14,10 @@ import numpy as np
 import pandas as pd
 
 
-DATABASE_NAME = "expenseManager"
-server = 'expensemgr.database.windows.net'
-username = 'SQLadmin' 
-password = 'password$123'
+DATABASE_NAME = ""
+server = ''
+username = '' 
+password = ''
 connection_url = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={DATABASE_NAME};UID={username};PWD={password};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30';
 
 
@@ -113,7 +113,7 @@ def setup_performance_metrics_table():
     conn = create_connection()
     cursor = conn.cursor()  
     sql_create_performance_metrics_table = """
-    CREATE TABLE API_Performance (
+    CREATE TABLE PerformanceMetrics (
         API VARCHAR(255),
         Samples INT,
         Average DECIMAL(10, 2),
@@ -128,10 +128,13 @@ def setup_performance_metrics_table():
         ReceivedKBPersecond DECIMAL(10, 2),
         StandardDeviation DECIMAL(10, 2),
         RunId INT,
-        RunDate DATE
+        RunDate DATE,
+        TestName VARCHAR(255),
+        TestStartTime DATETIME,
+        TestEndTime DATETIME
     );
     """
-    # create_table(conn, sql_create_performance_metrics_table)
+    create_table(conn, sql_create_performance_metrics_table)
 
     with open('PerfMetrics.csv', 'r') as csv_file:
         # Create a CSV reader

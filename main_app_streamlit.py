@@ -9,7 +9,6 @@ import sql_db
 from prompts.prompts import SYSTEM_MESSAGE
 from azure_openai import get_completion_from_messages
 
-
 def query_database(query, conn):
     """
     Run SQL query and return results in a dataframe
@@ -39,6 +38,9 @@ def upload_performance_metrics_data():
             # Process the uploaded file
             file_contents = uploaded_file.read().decode('utf-8-sig')
             st.write("Uploaded file contents:")
+            st.write(uploaded_file.name.split('_')[0])
+            st.write(datetime.strptime(uploaded_file.name.split('_')[1], '%d-%m-%Y-%H-%M-%S'))
+            st.write(datetime.strptime(uploaded_file.name.split('_')[2].split('.')[0], '%d-%m-%Y-%H-%M-%S'))
             st.write(file_contents)
 
             try:
@@ -66,6 +68,9 @@ def upload_performance_metrics_data():
                     "StandardDeviation": row['StandardDeviation'],
                     "RunId" : new_run_id,
                     "RunDate": run_date,
+                    "TestName": uploaded_file.name.split('_')[0],
+                    "TestStartTime": datetime.strptime(uploaded_file.name.split('_')[1], '%d-%m-%Y-%H-%M-%S'),
+                    "TestEndTime": datetime.strptime(uploaded_file.name.split('_')[2].split('.')[0], '%d-%m-%Y-%H-%M-%S'),
                 }
                 sql_db.insert_data(conn,table_name="PerformanceMetrics", data_dict=data_dict)
             st.write("Uploaded file inserted into database successfully.")
@@ -84,48 +89,78 @@ def generate_sql_queries():
     Returns:
         None
     """
-    st.write("Enter your message to generate SQL and view results.")
+    with col3:
+        st.write("Enter your message to generate SQL and view results.")
 
-    # Input field for the user to type a message
-    user_message = st.text_area("Enter your message:")
+        # Input field for the user to type a message
+        user_message = st.text_area("Enter your message:")
 
-    if user_message:
-        # Format the system message with the schema
-        formatted_system_message = SYSTEM_MESSAGE.format(schema=schemas['PerformanceMetrics'])
+        if user_message:
+            # Format the system message with the schema
+            formatted_system_message = SYSTEM_MESSAGE.format(schema=schemas['PerformanceMetrics'])
 
-        # Use GPT-4 to generate the SQL query
-        response = get_completion_from_messages(formatted_system_message, user_message)
-        if "```" in response:
-            # Find the start and end of the SQL query
-            start = response.find('```\n') + 4
-            end = response.find('\n```', start)
+            # Use GPT-4 to generate the SQL query
+            response = get_completion_from_messages(formatted_system_message, user_message)
+            if "```" in response:
+                # Find the start and end of the SQL query
+                start = response.find('```\n') + 4
+                end = response.find('\n```', start)
 
-            # Extract the SQL query
-            query = response[start:end]
-        else:
-            query = response
+                # Extract the SQL query
+                query = response[start:end]
+            else:
+                query = response
 
-        st.write("Generated Message for the prompt:")
-        st.code(response)
-        # Display the generated SQL query
-        st.write("Generated SQL Query:")
-        st.code(query, language="sql")
+            st.write("Generated Message for the prompt:")
+            st.code(response)
+            # Display the generated SQL query
+            st.write("Generated SQL Query:")
+            st.code(query, language="sql")
+            try:
+                # Run the SQL query and display the results
+                sql_results = query_database(query, conn)
+                st.write("Query Results:")
+                st.dataframe(sql_results)
+
+            except Exception as e:
+                st.write(f"An error occurred: {e}")
+
+def generate_testresults_summary():
+    """
+    This function generates table for test results history which has run details. The query results are displayed
+    using Streamlit.
+
+    Parameters:
+        None
+
+    Returns:
+        None
+    """
+    with col2:
+        st.markdown("# Test-Results History")
+        # query = "SELECT runid, MAX(rundate) as rundate FROM PerformanceMetrics GROUP BY runid ORDER BY rundate DESC"
+        query = "select distinct RunId,TestName,TestStartTime,TestEndTime FROM [dbo].[PerformanceMetrics]"
         try:
-            # Run the SQL query and display the results
-            sql_results = query_database(query, conn)
-            st.write("Query Results:")
-            st.dataframe(sql_results)
+                # Run the SQL query and display the results
+                sql_results = query_database(query, conn)
+                sql_results = sql_results.rename(columns={'runid': 'Run ID', 'rundate': 'Run Date'})
+                st.dataframe(sql_results, hide_index=True)
 
         except Exception as e:
-            st.write(f"An error occurred: {e}")
+                st.write(f"An error occurred: {e}")
         
 if __name__ == "__main__":
     # Create or connect to SQL Server database
     conn = sql_db.create_connection()
+    st.set_page_config(layout="wide")
+    col1, col2, col3, col4 = st.columns([0.5, 2, 2, 0.5])
 
+    # Generate test results summary
+    generate_testresults_summary()
     # Schema Representation for finances table
     schemas = sql_db.get_schema_representation()
-    st.title("Performance Analyzer with GPT-4")
-    upload_performance_metrics_data()
-    generate_sql_queries()
+    with col3:
+        st.title("Performance Analyzer with GPT-4")
+        upload_performance_metrics_data()
+        generate_sql_queries()
     
