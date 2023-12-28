@@ -2,12 +2,16 @@
 
 from datetime import datetime
 from io import StringIO
+import os
+import re
+import time
 import streamlit as st
 import sqlite3
 import pandas as pd
 import sql_db
 from prompts.prompts import SYSTEM_MESSAGE
 from azure_openai import get_completion_from_messages
+from streamlit_js_eval import streamlit_js_eval
 
 def query_database(query, conn):
     """
@@ -37,43 +41,58 @@ def upload_performance_metrics_data():
             upload = uploaded_file
             # Process the uploaded file
             file_contents = uploaded_file.read().decode('utf-8-sig')
-            st.write("Uploaded file contents:")
-            st.write(uploaded_file.name.split('_')[0])
-            st.write(datetime.strptime(uploaded_file.name.split('_')[1], '%d-%m-%Y-%H-%M-%S'))
-            st.write(datetime.strptime(uploaded_file.name.split('_')[2].split('.')[0], '%d-%m-%Y-%H-%M-%S'))
-            st.write(file_contents)
+            # st.write("Uploaded file contents:")
+            # st.write(uploaded_file.name.split('_')[0])
+            # st.write(datetime.strptime(uploaded_file.name.split('_')[1], '%d-%m-%Y-%H-%M-%S'))
+            # st.write(datetime.strptime(uploaded_file.name.split('_')[2].split('.')[0], '%d-%m-%Y-%H-%M-%S'))
+            # st.write(file_contents)
 
             try:
                 df = pd.read_csv(StringIO(file_contents), skip_blank_lines=True)
             except pd.errors.EmptyDataError:
                 st.write("The uploaded file is empty. Please upload a different file.")
-            cursor = conn.cursor()   
-            new_run_id = cursor.execute("SELECT MAX(RunId) + 1 AS NewRunId FROM PerformanceMetrics").fetchone()[0]
-            run_date = datetime.now()
-            # Insert the uploaded file into the database
-            for index, row in df.iterrows():
-                data_dict = {
-                    "API": row['API'],
-                    "Samples": row['Samples'],
-                    "Average": row['Average'],
-                    "Median": row['Median'],
-                    "NintyPercentage": row['NintyPercentage'],
-                    "NintyFivePercentage": row['NintyFivePercentage'],
-                    "NintyNinePercentage": row['NintyNinePercentage'],
-                    "Minimum": row['Minimum'],
-                    "Maximum": row['Maximum'],
-                    "ErrorPercentage": row['ErrorPercentage'],
-                    "Throughput": row['Throughput'],
-                    "ReceivedKBPersecond": row['ReceivedKBPersecond'],
-                    "StandardDeviation": row['StandardDeviation'],
-                    "RunId" : new_run_id,
-                    "RunDate": run_date,
-                    "TestName": uploaded_file.name.split('_')[0],
-                    "TestStartTime": datetime.strptime(uploaded_file.name.split('_')[1], '%d-%m-%Y-%H-%M-%S'),
-                    "TestEndTime": datetime.strptime(uploaded_file.name.split('_')[2].split('.')[0], '%d-%m-%Y-%H-%M-%S'),
-                }
-                sql_db.insert_data(conn,table_name="PerformanceMetrics", data_dict=data_dict)
-            st.write("Uploaded file inserted into database successfully.")
+
+            filename_str = os.path.splitext(uploaded_file.name)[0]
+            #st.write(filename_str) 
+
+            pattern = r'^[A-Za-z0-9]+[\d.]*_[0-9]{2}-[0-9]{2}-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}_[0-9]{2}-[0-9]{2}-[0-9]{4}-[0-9]{2}-[0-9]{2}-[0-9]{2}$'  
+            
+            if re.match(pattern, filename_str):                  
+                #st.write('Valid String format') 
+                cursor = conn.cursor()   
+                new_run_id = cursor.execute("SELECT MAX(RunId) + 1 AS NewRunId FROM PerformanceMetrics").fetchone()[0]
+                if new_run_id is None:
+                    new_run_id = 1
+                run_date = datetime.now()
+                # Insert the uploaded file into the database.
+                for index, row in df.iterrows():
+                    data_dict = {
+                        "API": row['Label'],
+                        "Samples": row['# Samples'],
+                        "Average": row['Average'],
+                        "Median": row['Median'],
+                        "NinetyPercentile": row['90% Line'],
+                        "NinetyFivePercentile": row['95% Line'],
+                        "NinetyNinePercentile": row['99% Line'],
+                        "Minimum": row['Min'],
+                        "Maximum": row['Max'],
+                        "ErrorPercentage": row['Error %'],
+                        "Throughput": row['Throughput'],
+                        "ReceivedKBPersecond": row['Received KB/sec'],
+                        "StandardDeviation": row['Std. Dev.'],
+                        "RunId" : new_run_id,
+                        "TestName": uploaded_file.name.split('_')[0],
+                        "TestStartTime": datetime.strptime(uploaded_file.name.split('_')[1], '%d-%m-%Y-%H-%M-%S'),
+                        "TestEndTime": datetime.strptime(uploaded_file.name.split('_')[2].split('.')[0], '%d-%m-%Y-%H-%M-%S'),
+                    }
+                    sql_db.insert_data(conn,table_name="PerformanceMetrics", data_dict=data_dict)                       
+                
+                st.write("File upload was successful.")
+            else:  
+                st.write("File upload Failed due to Incorrect File format.") 
+            time.sleep(4) 
+            streamlit_js_eval(js_expressions="parent.window.location.reload()")  
+           
             
 def generate_sql_queries():
     """
@@ -90,8 +109,6 @@ def generate_sql_queries():
         None
     """
     with col3:
-        st.write("Enter your message to generate SQL and view results.")
-
         # Input field for the user to type a message
         user_message = st.text_area("Enter your message:")
 
@@ -137,14 +154,13 @@ def generate_testresults_summary():
         None
     """
     with col2:
-        st.markdown("# Test-Results History")
-        # query = "SELECT runid, MAX(rundate) as rundate FROM PerformanceMetrics GROUP BY runid ORDER BY rundate DESC"
-        query = "select distinct RunId,TestName,TestStartTime,TestEndTime FROM [dbo].[PerformanceMetrics]"
+        st.header("Test Results History")
+        query = "select distinct top 10  RunId,TestName,TestStartTime,TestEndTime FROM [dbo].[PerformanceMetrics] order by RunId Desc"
         try:
                 # Run the SQL query and display the results
                 sql_results = query_database(query, conn)
-                sql_results = sql_results.rename(columns={'runid': 'Run ID', 'rundate': 'Run Date'})
-                st.dataframe(sql_results, hide_index=True)
+                sql_results = sql_results.rename(columns={'RunId': 'Run ID', 'TestName': 'Test Name', 'TestStartTime': 'Test StartTime', 'TestEndTime': 'Test EndTime'})
+                st.dataframe(sql_results, hide_index=True,width=4500)
 
         except Exception as e:
                 st.write(f"An error occurred: {e}")
@@ -160,7 +176,7 @@ if __name__ == "__main__":
     # Schema Representation for finances table
     schemas = sql_db.get_schema_representation()
     with col3:
-        st.title("Performance Analyzer with GPT-4")
+        st.header("Perf Analyzer-Chatbot")
         upload_performance_metrics_data()
         generate_sql_queries()
     
