@@ -1,8 +1,8 @@
 # sql_db.py
-
 import csv
 from datetime import date, timedelta
 from gettext import npgettext
+from dotenv import load_dotenv
 import random
 from sqlite3 import Error
 import sqlite3
@@ -12,14 +12,18 @@ from tqdm import tqdm
 
 import numpy as np
 import pandas as pd
+import os
+import appConfig
 
+load_dotenv()
 
-DATABASE_NAME = ""
-server = ''
-username = '' 
-password = ''
-connection_url = f'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={DATABASE_NAME};UID={username};PWD={password};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30';
-
+def create_connection_url():
+    DATABASE_NAME = appConfig.fetchKey('DATABASE_NAME')
+    server = appConfig.fetchKey('SQL_SERVER')
+    username = appConfig.fetchKey('SQL_USERNAME') 
+    password = appConfig.fetchKey('SQL_PASSWORD')
+    dbConnectionString = os.getenv('DB_CONNECTION_STRING')
+    return dbConnectionString.format(DATABASE_NAME=DATABASE_NAME, server=server, username=username, password=password)
 
 def create_connection():
     """ 
@@ -30,7 +34,7 @@ def create_connection():
     """
     conn = None;
     try:
-        conn = pyodbc.connect(connection_url)
+        conn = pyodbc.connect(create_connection_url())
     except Error as e:
         print(e)
     return conn
@@ -118,9 +122,9 @@ def setup_performance_metrics_table():
         Samples INT,
         Average DECIMAL(10, 2),
         Median DECIMAL(10, 2),
-        NintyPercentage DECIMAL(10, 2),
-        NintyFivePercentage DECIMAL(10, 2),
-        NintyNinePercentage DECIMAL(10, 2),
+        NinetyPercentile DECIMAL(10, 2),
+        NinetyFivePercentile DECIMAL(10, 2),
+        NinetyNinePercentile DECIMAL(10, 2),
         Minimum INT,
         Maximum INT,
         ErrorPercentage VARCHAR(10),
@@ -128,7 +132,6 @@ def setup_performance_metrics_table():
         ReceivedKBPersecond DECIMAL(10, 2),
         StandardDeviation DECIMAL(10, 2),
         RunId INT,
-        RunDate DATE,
         TestName VARCHAR(255),
         TestStartTime DATETIME,
         TestEndTime DATETIME
@@ -149,8 +152,8 @@ def setup_performance_metrics_table():
                 INSERT INTO PerformanceMetrics (
                     API, Samples, Average, Median, NintyPercentage, NintyFivePercentage, NintyNinePercentage, 
                     Minimum, Maximum, ErrorPercentage, Throughput, ReceivedKBPersecond, 
-                    StandardDeviation, RunId, RunDate
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    StandardDeviation, RunId
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """, row)
 
     # Commit the changes and close the connection
