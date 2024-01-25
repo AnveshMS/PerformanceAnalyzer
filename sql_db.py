@@ -23,7 +23,6 @@ def create_connection_url():
     username = appConfig.fetchKey('SQL_USERNAME') 
     password = appConfig.fetchKey('SQL_PASSWORD')
     dbConnectionString = os.getenv('DB_CONNECTION_STRING')
-    # dbConnectionString = 'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={DATABASE_NAME};UID={username};PWD={password};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30'
     return dbConnectionString.format(DATABASE_NAME=DATABASE_NAME, server=server, username=username, password=password)
 
 def create_connection():
