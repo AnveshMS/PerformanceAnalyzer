@@ -2,7 +2,7 @@
 import csv
 from datetime import date, timedelta
 from gettext import npgettext
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 import random
 from sqlite3 import Error
 import sqlite3
@@ -15,14 +15,15 @@ import pandas as pd
 import os
 import appConfig
 
-load_dotenv()
+# load_dotenv()
 
 def create_connection_url():
     DATABASE_NAME = appConfig.fetchKey('DATABASE_NAME')
     server = appConfig.fetchKey('SQL_SERVER')
     username = appConfig.fetchKey('SQL_USERNAME') 
     password = appConfig.fetchKey('SQL_PASSWORD')
-    dbConnectionString = os.getenv('DB_CONNECTION_STRING')
+    # dbConnectionString = os.getenv('DB_CONNECTION_STRING')
+    dbConnectionString = 'DRIVER={{ODBC Driver 17 for SQL Server}};SERVER={server};DATABASE={DATABASE_NAME};UID={username};PWD={password};Encrypt=yes;TrustServerCertificate=no;Connection Timeout=30'
     return dbConnectionString.format(DATABASE_NAME=DATABASE_NAME, server=server, username=username, password=password)
 
 def create_connection():
