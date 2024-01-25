@@ -1,9 +1,9 @@
-from dotenv import load_dotenv
+# from dotenv import load_dotenv
 import os
 import openai
 import appConfig
 
-load_dotenv()
+# load_dotenv()
 def initialize_openai_api():
     openai.api_type = appConfig.fetchKey("OPENAI_TYPE").strip()
     openai.api_base = appConfig.fetchKey("OPENAI_BASE").strip()
