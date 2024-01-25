@@ -1,5 +1,7 @@
 numpy
 pandas
 streamlit
+python-dotenv
+pyodbc
 openai==0.28
 streamlit_js_eval
