@@ -161,7 +161,7 @@ def generate_testresults_history():
                 # Run the SQL query and display the results
                 sql_results = query_database(query, conn)
                 sql_results = sql_results.rename(columns={'RunId': 'Run ID', 'TestName': 'Test Name', 'TestStartTime': 'Test StartTime', 'TestEndTime': 'Test EndTime'})
-                st.dataframe(sql_results, hide_index=True,width=4000)
+                st.dataframe(sql_results, hide_index=True,width=4500)
 
         except Exception as e:
                 st.write(f"An error occurred: {e}")
