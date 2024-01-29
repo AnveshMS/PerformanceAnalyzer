@@ -64,4 +64,4 @@ jobs:
         with:
           app-name: 'perfAnalyser'
           slot-name: 'Production'
-          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_0B8AEAECF9F2405BA0DD0AAB550530E9 }}
+          publish-profile: ${{ secrets.AZUREAPPSERVICE_PUBLISHPROFILE_FDF50EA7DA1A40A9B632F8166ADF534B }}
