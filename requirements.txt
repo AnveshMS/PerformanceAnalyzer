@@ -6,3 +6,8 @@ azure-appconfiguration
 pyodbc
 openai==0.28
 streamlit_js_eval
+email
+datetime
+PIL
+selenium
+PIL
