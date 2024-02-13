@@ -27,7 +27,6 @@ import smtplib
 from PIL import ImageGrab
 #from reportlab.pdfgen import canvas
 import time
-from selenium import webdriver
 from PIL import Image
 
 
@@ -381,8 +380,3 @@ if __name__ == "__main__":
         4. **Compare and analyze API Response time between Test Runs**
             - Get me list of API,Average,RunID of records with API names in SearchAPI, HomeAPI at RunID 1,2
         """)
-        
-    
-
-    
-    
