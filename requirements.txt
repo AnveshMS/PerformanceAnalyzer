@@ -9,5 +9,3 @@ streamlit_js_eval
 email
 datetime
 PIL
-selenium
-PIL
